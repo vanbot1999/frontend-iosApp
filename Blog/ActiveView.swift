@@ -6,3 +6,8 @@
 //
 
 import Foundation
+
+enum ActiveView {
+    case login
+    case register
+}

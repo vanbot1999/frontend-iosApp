@@ -10,62 +10,50 @@ import SwiftUI
 struct LoginView: View {
     @State private var username: String = ""
     @State private var password: String = ""
+    @EnvironmentObject var userAuth: UserAuth
+    @Binding var activeView: ActiveView
     
     var body: some View {
-        NavigationView {
-            VStack {
-                TextField("用户名", text: $username)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                
-                SecureField("密码", text: $password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                
-                Button(action: loginUser) {
-                    Text("登录")
-                        .foregroundColor(.white)
-                        .frame(minWidth: 0, maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(40)
-                }
+        VStack {
+            TextField("用户名", text: $username)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
+                .autocapitalization(.none)
+
+            SecureField("密码", text: $password)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            Button("登录", action: loginUser)
+                .foregroundColor(.white)
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .padding()
+                .background(Color.blue)
+                .cornerRadius(40)
+                .padding()
+            
+            Button("没有账号？注册") {
+                activeView = .register
             }
+            .foregroundColor(.blue)
             .padding()
-            .navigationBarTitle("登录")
         }
+        .padding()
+        .navigationBarTitle("登录", displayMode: .inline)
+        .navigationBarHidden(true)
     }
     
-    func fetchBlogs() {
-        guard let url = URL(string: "http://localhost:3000/api/blogs") else { return }
-        
-        URLSession.shared.dataTask(with: url) { (data, response, error) in
-            if let error = error {
-                print("Error fetching blogs: \(error.localizedDescription)")
-                return
-            }
-            
-            if let data = data,
-               let response = response as? HTTPURLResponse,
-               response.statusCode == 200 {
-                
-                if let blogs = try? JSONDecoder().decode([BlogPost].self, from: data) {
-                    // 更新 UI 以显示博客帖子
-                    print("Blogs: \(blogs)")
-                } else {
-                    print("Unable to decode blogs")
-                }
-            } else {
-                print("Failed to fetch blogs")
-            }
-        }.resume()
-    }
     func loginUser() {
-        guard let url = URL(string: "http://localhost:3000/api/login") else { return }
+        guard let url = URL(string: "http://localhost:3000/api/login") else {
+            print("Invalid URL")
+            return
+        }
 
         let body: [String: String] = ["username": username, "password": password]
-        let finalBody = try? JSONSerialization.data(withJSONObject: body)
+        guard let finalBody = try? JSONSerialization.data(withJSONObject: body) else {
+            print("Failed to serialize body")
+            return
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -73,27 +61,48 @@ struct LoginView: View {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         URLSession.shared.dataTask(with: request) { (data, response, error) in
-            if let error = error {
-                print("Login error: \(error.localizedDescription)")
-                return
-            }
+            DispatchQueue.main.async {
+                if let error = error {
+                    // Handle error case
+                    print("Login error: \(error.localizedDescription)")
+                    return
+                }
 
-            if let data = data,
-               let response = response as? HTTPURLResponse,
-               response.statusCode == 200 {
+                guard let data = data, let response = response as? HTTPURLResponse else {
+                    print("Invalid response or data")
+                    return
+                }
 
-                let token = String(data: data, encoding: .utf8) ?? ""
-                print("Login successful, token: \(token)")
-                // 保存或处理 token
-            } else {
-                print("Login failed")
+                if response.statusCode == 200 {
+                    // Attempt to parse the JSON data
+                    do {
+                        if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                            if let token = json["token"] as? String, let username = json["username"] as? String {
+                                // Here you might want to save the token securely, e.g., in Keychain
+                                print("Received token: \(token)")
+
+                                // Update your UserAuth object
+                                self.userAuth.username = username
+                                self.userAuth.isLoggedIn = true
+                            } else {
+                                print("Username or token missing in response")
+                            }
+                        }
+                    } catch {
+                        print("Failed to parse JSON: \(error.localizedDescription)")
+                    }
+                } else {
+                    // Handle non-200 responses
+                    print("Login failed with status code: \(response.statusCode)")
+                }
             }
         }.resume()
     }
+}
 
-    struct BlogPost: Codable {
-        let title: String
-        let content: String
-        // 添加更多字段以匹配你的模型
+struct LoginView_Previews: PreviewProvider {
+    @State static var activeView: ActiveView = .login
+    static var previews: some View {
+        LoginView(activeView: $activeView).environmentObject(UserAuth())
     }
 }
