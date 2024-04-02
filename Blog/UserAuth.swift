@@ -9,6 +9,6 @@ import SwiftUI
 import Combine
 
 class UserAuth: ObservableObject {
-    @Published var isLoggedIn = false
-    @Published var username: String? // 存储当前登录的用户名
+    @Published var isLoggedIn: Bool = false
+    @Published var username: String? = nil
 }
