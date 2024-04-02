@@ -17,7 +17,7 @@ struct ContentView: View {
             
             ShoppingPageView()
                 .tabItem {
-                    Label("商场", systemImage: "cart.fill")
+                    Label("商城", systemImage: "cart.fill")
                 }
             
             PublishPageView()
