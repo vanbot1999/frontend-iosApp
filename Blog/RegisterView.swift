@@ -11,6 +11,7 @@ struct RegisterView: View {
     @State private var username: String = ""
     @State private var email: String = ""
     @State private var password: String = ""
+    @State private var errorMessage: String = ""
     @EnvironmentObject var userAuth: UserAuth
     @Binding var activeView: ActiveView
     
@@ -26,9 +27,16 @@ struct RegisterView: View {
                 .padding()
                 .autocapitalization(.none)
                 .keyboardType(.emailAddress)
+            
             SecureField("密码", text: $password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
+            
+            if !errorMessage.isEmpty {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .padding()
+            }
             
             Button("注册", action: registerUser)
                 .foregroundColor(.white)
@@ -49,35 +57,37 @@ struct RegisterView: View {
         .navigationBarHidden(true)
     }
     
-    func registerUser(username: String, email: String, password: String) {
-        guard let url = URL(string: "http://localhost:3000/api/register") else { return }
-        
-        let body: [String: String] = ["username": username, "email": email, "password": password]
-        let finalBody = try? JSONSerialization.data(withJSONObject: body)
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.httpBody = finalBody
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        URLSession.shared.dataTask(with: request) { (data, response, error) in
-            if let error = error {
-                print("Registration error: \(error.localizedDescription)")
-                return
-            }
-            
-            if let data = data,
-               let response = response as? HTTPURLResponse,
-               response.statusCode == 201 {
-                
-                let responseString = String(data: data, encoding: .utf8) ?? ""
-                print("Registration successful: \(responseString)")
-            } else {
-                print("Registration failed")
-            }
-        }.resume()
-    }
     func registerUser() {
+        guard !username.isEmpty else {
+            errorMessage = "用户名不能为空。"
+            return
+        }
+        
+        guard !email.isEmpty else {
+            errorMessage = "电子邮箱不能为空。"
+            return
+        }
+        
+        guard !password.isEmpty else {
+            errorMessage = "密码不能为空。"
+            return
+        }
+        // 添加密码强度规则
+        if password.count < 8 {
+            errorMessage = "密码长度至少为8个字符。"
+            return
+        }
+        
+        if !containsSpecialCharacter(password) {
+            errorMessage = "密码必须包含至少一个特殊字符。"
+            return
+        }
+        
+        if !containsUppercaseLetter(password) {
+            errorMessage = "密码必须包含至少一个大写字母。"
+            return
+        }
+        
         guard let url = URL(string: "http://localhost:3000/api/register") else { return }
         
         let body: [String: String] = ["username": username, "email": email, "password": password]
@@ -91,21 +101,63 @@ struct RegisterView: View {
         URLSession.shared.dataTask(with: request) { (data, response, error) in
             if let error = error {
                 print("Registration error: \(error.localizedDescription)")
+                DispatchQueue.main.async { [self] in
+                    errorMessage = "注册失败，请稍后再试。"
+                }
                 return
             }
             
-            if let data = data,
-               let response = response as? HTTPURLResponse,
-               response.statusCode == 201 {
-                
-                let responseString = String(data: data, encoding: .utf8) ?? ""
-                print("Registration successful: \(responseString)")
+            if let httpResponse = response as? HTTPURLResponse {
+                if let data = data {
+                    if httpResponse.statusCode == 201 {
+                        DispatchQueue.main.async { [self] in
+                            errorMessage = "注册成功！"
+                            // 清空输入字段
+                            username = ""
+                            email = ""
+                            password = ""
+                        }
+                    } else if httpResponse.statusCode == 409 {
+                        do {
+                            let errorResponse = try JSONDecoder().decode(ErrorResponse.self, from: data)
+                            DispatchQueue.main.async { [self] in
+                                errorMessage = errorResponse.message
+                            }
+                        } catch {
+                            DispatchQueue.main.async { [self] in
+                                errorMessage = "注册失败，请稍后再试。"
+                            }
+                        }
+                    } else {
+                        DispatchQueue.main.async { [self] in
+                            errorMessage = "注册失败，请稍后再试。"
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.async { [self] in
+                        errorMessage = "注册失败，请稍后再试。"
+                    }
+                }
             } else {
-                print("Registration failed")
+                DispatchQueue.main.async { [self] in
+                    errorMessage = "注册失败，请稍后再试。"
+                }
             }
         }.resume()
     }
-    
+    func containsSpecialCharacter(_ password: String) -> Bool {
+        let specialCharacterSet = CharacterSet(charactersIn: "!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?")
+        return password.rangeOfCharacter(from: specialCharacterSet) != nil
+    }
+
+    func containsUppercaseLetter(_ password: String) -> Bool {
+        let uppercaseLetterSet = CharacterSet.uppercaseLetters
+        return password.rangeOfCharacter(from: uppercaseLetterSet) != nil
+    }
+}
+
+struct ErrorResponse: Decodable {
+    let message: String
 }
 
 struct RegisterView_Previews: PreviewProvider {

@@ -8,66 +8,54 @@
 import SwiftUI
 
 struct HomePageView: View {
-    @State private var blogPosts = [BlogPost]()
+    @EnvironmentObject var userAuth: UserAuth
+    @State private var posts = [Post]() // 使用 Post 类型
 
-    let columns = [
-        GridItem(.adaptive(minimum: 160), spacing: 16)
+    // 使用两列布局，每列内容独立排列
+    let columns: [GridItem] = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
     ]
 
     var body: some View {
         NavigationView {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(blogPosts) { blog in
-                        BlogPostView(blog: blog)
+                    ForEach(posts) { post in
+                        PostView(post: post) // 引用 PostView
                     }
                 }
                 .padding(.horizontal)
             }
             .navigationBarTitle("发现", displayMode: .inline)
             .onAppear {
-                BlogService.fetchBlogs { blogs in
-                    self.blogPosts = blogs
-                }
+                loadPosts()
             }
         }
     }
-}
-
-struct BlogPostView: View {
-    let blog: BlogPost
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            AsyncImage(url: URL(string: blog.imageUrl)) { phase in
-                if let image = phase.image {
-                    image.resizable() // Displays the loaded image.
-                } else if phase.error != nil {
-                    Color.red // Indicates an error.
-                } else {
-                    ProgressView() // Acts as a placeholder.
-                }
-            }
-            .aspectRatio(1, contentMode: .fit) // Adjust the aspect ratio accordingly
+    
+    func loadPosts() {
+        BlogService.fetchBlogs(excludeAuthor: userAuth.username) { fetchedPosts in
+            // 按发布时间倒序排序
+            var decodedPosts = fetchedPosts.sorted { $0.date > $1.date }
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text(blog.title)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Text(blog.author)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            // 处理图片URL
+            decodedPosts = decodedPosts.map { post -> Post in
+                var updatedPost = post
+                let fullImageUrl = "http://localhost:3000/\(post.imageUrl)" // 将相对路径转换为完整的URL
+                updatedPost.imageUrl = fullImageUrl
+                return updatedPost
             }
-            .padding([.horizontal, .bottom])
+            
+            DispatchQueue.main.async {
+                self.posts = decodedPosts
+            }
         }
-        .background(Color.white)
-        .cornerRadius(10)
-        .shadow(radius: 5)
     }
 }
 
 struct HomePageView_Previews: PreviewProvider {
     static var previews: some View {
-        HomePageView()
+        HomePageView().environmentObject(UserAuth())
     }
 }
