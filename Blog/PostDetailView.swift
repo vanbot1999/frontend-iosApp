@@ -116,6 +116,6 @@ struct PostDetailView: View {
 struct PostDetailView_Previews: PreviewProvider {
     static var previews: some View {
         let samplePost = Post(id: "1", title: "示例帖子", content: "这是一个示例帖子的内容。", imageUrl: "https://example.com/image.jpg", date: "2024-04-03T12:30:00.000Z", author: "示例作者")
-        return PostDetailView(post: samplePost)
+        return PostDetailView(post: samplePost).environmentObject(UserAuth())
     }
 }

@@ -41,15 +41,22 @@ struct PublishPageView: View {
                     .padding()
                 
                 TextEditor(text: $content)
-                    .border(Color.gray, width: 1)
-                    .padding()
+                    .padding(4)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
                 
                 if isUploading {
                     ProgressView()
                         .padding()
                 } else {
-                    Button("发布") {
-                        uploadPost()
+                    Button(action: uploadPost) {
+                        Text("发布")
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.green)
+                            .cornerRadius(10)
+                            .shadow(radius: 3)
                     }
                     .padding()
                 }
@@ -108,6 +115,7 @@ struct PublishPageView: View {
                 self.title = ""
                 self.content = ""
                 self.selectedImage = nil
+                NotificationCenter.default.post(name: NSNotification.Name("PostUploaded"), object: nil)
             }
         }.resume()
     }

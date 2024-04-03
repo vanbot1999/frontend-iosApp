@@ -10,13 +10,13 @@ import SwiftUI
 struct HomePageView: View {
     @EnvironmentObject var userAuth: UserAuth
     @State private var posts = [Post]() // 使用 Post 类型
-
+    
     // 使用两列布局，每列内容独立排列
     let columns: [GridItem] = [
         GridItem(.flexible()),
         GridItem(.flexible())
     ]
-
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -41,22 +41,52 @@ struct HomePageView: View {
     }
     
     func loadPosts() {
-        BlogService.fetchBlogs(excludeAuthor: userAuth.username) { fetchedPosts in
-            // 按发布时间倒序排序
-            var decodedPosts = fetchedPosts.sorted { $0.date > $1.date }
-            
-            // 处理图片URL
-            decodedPosts = decodedPosts.map { post -> Post in
-                var updatedPost = post
-                let fullImageUrl = "http://localhost:3000/\(post.imageUrl)" // 将相对路径转换为完整的URL
-                updatedPost.imageUrl = fullImageUrl
-                return updatedPost
-            }
-            
-            DispatchQueue.main.async {
-                self.posts = decodedPosts
-            }
+        print("当前用户登录状态: \(userAuth.isLoggedIn), 用户名: \(String(describing: userAuth.username))")
+        guard let username = userAuth.username?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            print("用户名未设置")
+            return
         }
+        
+        let urlString = "http://localhost:3000/api/posts?excludeAuthor=\(username)"
+        
+        guard let url = URL(string: urlString) else {
+            print("无效的URL")
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("请求失败: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("无法获取HTTP响应")
+                return
+            }
+            print("HTTP状态码: \(httpResponse.statusCode)")
+            guard let data = data else {
+                print("没有接收到数据")
+                return
+            }
+            print("接收到的原始数据: \(String(data: data, encoding: .utf8) ?? "无法解码")")
+            
+            do {
+                var decodedPosts = try JSONDecoder().decode([Post].self, from: data)
+                // 按发布时间倒序排序
+                decodedPosts.sort { $0.date > $1.date }
+                // 处理图片URL
+                let updatedPosts = decodedPosts.map { post -> Post in
+                    var updatedPost = post
+                    let fullImageUrl = "http://localhost:3000/\(post.imageUrl)" // 将相对路径转换为完整的URL
+                    updatedPost.imageUrl = fullImageUrl
+                    return updatedPost
+                }
+                self.posts = updatedPosts
+            } catch {
+                print("解码错误: \(error)")
+            }
+        }.resume()
     }
 }
 

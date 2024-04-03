@@ -27,7 +27,7 @@ struct ProfilePageView: View {
                     
                     // 使用 LazyVGrid 来实现瀑布流布局
                     ScrollView {
-                        LazyVGrid(columns: columns, spacing: 16) {
+                        LazyVGrid(columns: columns, spacing: 8) {
                             ForEach(posts) { post in
                                 NavigationLink(destination: PostDetailView(post: post)) {
                                     PostView(post: post)
@@ -41,7 +41,10 @@ struct ProfilePageView: View {
                         .padding(.horizontal)
                     }
                     .onAppear {
-                        loadPosts(for: username)
+                        loadPosts(for: userAuth.username ?? "")
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PostUploaded"))) { _ in
+                        loadPosts(for: userAuth.username ?? "")
                     }
                 } else {
                     Text("未能获取到用户名")
@@ -81,7 +84,7 @@ struct ProfilePageView: View {
     }
     
     func loadPosts(for username: String) {
-        guard let url = URL(string: "http://localhost:3000/api/posts/\(username)") else {
+        guard let url = URL(string: "http://localhost:3000/api/posts/author/\(username)") else {
             print("无效URL")
             return
         }
