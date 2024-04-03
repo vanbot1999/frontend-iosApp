@@ -19,37 +19,45 @@ struct ProfilePageView: View {
     ]
     
     var body: some View {
-        VStack {
-            if let username = userAuth.username {
-                Text("\(username)")
-                    .padding()
-                
-                // 使用 LazyVGrid 来实现瀑布流布局
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(posts) { post in
-                            PostView(post: post)
+        NavigationView {
+            VStack {
+                if let username = userAuth.username {
+                    Text("\(username)")
+                        .padding()
+                    
+                    // 使用 LazyVGrid 来实现瀑布流布局
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            ForEach(posts) { post in
+                                NavigationLink(destination: PostDetailView(post: post)) {
+                                    PostView(post: post)
+                                        .padding(8) // 添加点击区域
+                                        .background(Color.clear) // 清除背景色
+                                        .cornerRadius(8) // 圆角
+                                }
+                                .buttonStyle(PlainButtonStyle()) // 使用 PlainButtonStyle 隐藏默认样式
+                            }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
+                    .onAppear {
+                        loadPosts(for: username)
+                    }
+                } else {
+                    Text("未能获取到用户名")
+                        .padding()
                 }
-                .onAppear {
-                    loadPosts(for: username)
-                }
-            } else {
-                Text("未能获取到用户名")
-                    .padding()
+                
+                logoutButton
             }
-            
-            logoutButton
-        }
-        .alert(isPresented: $showingLogoutAlert) {
-            Alert(
-                title: Text("确认登出"),
-                message: Text("您确定要登出吗？"),
-                primaryButton: .destructive(Text("确认"), action: logout),
-                secondaryButton: .cancel(Text("取消"))
-            )
+            .alert(isPresented: $showingLogoutAlert) {
+                Alert(
+                    title: Text("确认登出"),
+                    message: Text("您确定要登出吗？"),
+                    primaryButton: .destructive(Text("确认"), action: logout),
+                    secondaryButton: .cancel(Text("取消"))
+                )
+            }
         }
     }
     
@@ -71,6 +79,7 @@ struct ProfilePageView: View {
         userAuth.isLoggedIn = false
         userAuth.username = nil
     }
+    
     func loadPosts(for username: String) {
         guard let url = URL(string: "http://localhost:3000/api/posts/\(username)") else {
             print("无效URL")

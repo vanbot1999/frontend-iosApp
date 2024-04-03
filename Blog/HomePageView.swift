@@ -22,7 +22,13 @@ struct HomePageView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(posts) { post in
-                        PostView(post: post) // 引用 PostView
+                        NavigationLink(destination: PostDetailView(post: post)) {
+                            PostView(post: post) // 引用 PostView
+                                .padding(8) // 添加点击区域
+                                .background(Color.clear) // 清除背景色
+                                .cornerRadius(8) // 圆角
+                        }
+                        .buttonStyle(PlainButtonStyle()) // 使用 PlainButtonStyle 隐藏默认样式
                     }
                 }
                 .padding(.horizontal)

@@ -27,6 +27,7 @@
 		01E400422BBBA9AF00AB2C84 /* ActiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01E400412BBBA9AF00AB2C84 /* ActiveView.swift */; };
 		01E400442BBCE08900AB2C84 /* Post.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01E400432BBCE08900AB2C84 /* Post.swift */; };
 		01E400462BBCE53100AB2C84 /* UIImagePickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01E400452BBCE53100AB2C84 /* UIImagePickerViewController.swift */; };
+		01E400482BBCF61100AB2C84 /* PostDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01E400472BBCF61100AB2C84 /* PostDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +70,7 @@
 		01E400412BBBA9AF00AB2C84 /* ActiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveView.swift; sourceTree = "<group>"; };
 		01E400432BBCE08900AB2C84 /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
 		01E400452BBCE53100AB2C84 /* UIImagePickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImagePickerViewController.swift; sourceTree = "<group>"; };
+		01E400472BBCF61100AB2C84 /* PostDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailView.swift; sourceTree = "<group>"; };
 		01E4FFFE2BBABD0100AB2C84 /* Blog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -105,6 +107,7 @@
 				01E4003D2BBBA3F200AB2C84 /* UserAuth.swift */,
 				01E4003B2BBBA0B200AB2C84 /* RegisterView.swift */,
 				01E400032BBABD0100AB2C84 /* ContentView.swift */,
+				01E400472BBCF61100AB2C84 /* PostDetailView.swift */,
 				01E400432BBCE08900AB2C84 /* Post.swift */,
 				01E4002B2BBAC94800AB2C84 /* HomePageView.swift */,
 				01E400372BBACE2A00AB2C84 /* BlogService.swift */,
@@ -316,6 +319,7 @@
 				01E400422BBBA9AF00AB2C84 /* ActiveView.swift in Sources */,
 				01E4003C2BBBA0B200AB2C84 /* RegisterView.swift in Sources */,
 				01E400402BBBA48B00AB2C84 /* MainView.swift in Sources */,
+				01E400482BBCF61100AB2C84 /* PostDetailView.swift in Sources */,
 				01E400042BBABD0100AB2C84 /* ContentView.swift in Sources */,
 				01E400322BBAC99D00AB2C84 /* ProfilePageView.swift in Sources */,
 				01E400302BBAC99200AB2C84 /* MessagesPageView.swift in Sources */,

@@ -46,4 +46,40 @@ class BlogService {
             }
         }.resume()
     }
+    
+    static func deletePost(postId: String, completion: @escaping (Bool) -> Void) {
+        // 构建删除帖子的URL
+        let urlString = "http://localhost:3000/api/posts/\(postId)"
+        guard let url = URL(string: urlString) else {
+            print("无效的URL")
+            completion(false)
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+
+        // 发送请求
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("请求错误: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("无效的响应")
+                completion(false)
+                return
+            }
+
+            if httpResponse.statusCode == 200 {
+                // 帖子删除成功
+                completion(true)
+            } else {
+                // 帖子删除失败
+                completion(false)
+            }
+        }.resume()
+    }
 }
