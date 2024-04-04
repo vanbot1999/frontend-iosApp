@@ -39,8 +39,8 @@ struct Post: Identifiable, Decodable {
     var imageUrl: String
     var date: String
     var author: String
-    var comments: [Comment] = [] // 新增评论数组
-    
+    var comments: [Comment]
+
     enum CodingKeys: String, CodingKey {
         case id = "_id"
         case title

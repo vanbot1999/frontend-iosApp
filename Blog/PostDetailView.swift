@@ -72,14 +72,19 @@ struct PostDetailView: View {
                 HStack {
                     TextField("写下你的评论...", text: $newComment)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                    Button(action: addComment) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .resizable()
-                            .frame(width: 30, height: 30)
-                            .foregroundColor(.blue)
+
+                    if !newComment.isEmpty {  // 当newComment不为空时，显示发送按钮
+                        Button(action: addComment) {
+                            Text("发送")
+                                .fontWeight(.semibold)
+                                .frame(width: 60, height: 30)  // 设置按钮的大小为方形
+                                .background(Color.blue)  // 设置按钮背景颜色
+                                .foregroundColor(.white)  // 设置按钮文字颜色
+                                .cornerRadius(5)  // 设置按钮圆角
+                        }
                     }
                 }
-                
+
                 // 评论列表
                 ForEach(comments) { comment in
                     VStack(alignment: .leading) {
@@ -114,10 +119,38 @@ struct PostDetailView: View {
         }
         .navigationBarTitle("帖子详情", displayMode: .inline)
         .onAppear {
-            loadComments(for: post.id)
+            loadPostDetails()
         }
     }
-    
+    func loadPostDetails() {
+        guard let url = URL(string: "http://localhost:3000/api/posts/\(post.id)/details") else { return }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("Error loading post details: \(error)")
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                print("Unexpected response status code: \(String(describing: response))")
+                return
+            }
+
+            guard let data = data else {
+                print("No data received")
+                return
+            }
+
+            do {
+                let decodedPost = try JSONDecoder().decode(Post.self, from: data)
+                DispatchQueue.main.async {
+                    self.comments = decodedPost.comments
+                }
+            } catch {
+                print("Error decoding post details: \(error)")
+            }
+        }.resume()
+    }
     func addComment() {
         guard let url = URL(string: "http://localhost:3000/api/posts/\(post.id)/comments") else { return }
         
@@ -152,42 +185,12 @@ struct PostDetailView: View {
             // 成功添加评论后的操作，例如更新UI或评论列表
             DispatchQueue.main.async {
                 self.newComment = "" // 清空评论输入框
-                loadComments(for: self.post.id) // 重新加载评论列表以获取最新数据
+                loadPostDetails() // 重新加载帖子详情和评论，以获取最新数据
             }
-
+            
         }.resume()
     }
-    
-    func loadComments(for postId: String) {
-        guard let url = URL(string: "http://localhost:3000/api/posts/\(postId)/comments") else { return }
-
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                print("Error loading comments: \(error)")
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                print("Unexpected response status code: \(response)")
-                return
-            }
-
-            guard let data = data else {
-                print("No data received")
-                return
-            }
-
-            do {
-                let decodedComments = try JSONDecoder().decode([Comment].self, from: data)
-                DispatchQueue.main.async {
-                    self.comments = decodedComments // 更新comments数组
-                }
-            } catch {
-                print("Error decoding comments: \(error)")
-            }
-        }.resume()
-    }
-
+        
     struct CommentData: Encodable {
         let content: String
         let author: String
