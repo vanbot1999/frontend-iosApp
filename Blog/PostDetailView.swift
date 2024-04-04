@@ -64,6 +64,23 @@ struct PostDetailView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
+                // 删除按钮，只有帖子作者可以看到并操作
+                if post.author == userAuth.username {
+                    Button(action: {
+                        showingDeleteAlert = true
+                    }) {
+                        Text("删除帖子")
+                            .foregroundColor(.red)
+                    }
+                    .alert(isPresented: $showingDeleteAlert) {
+                        Alert(
+                            title: Text("确认删除"),
+                            message: Text("您确定要删除此帖子吗？"),
+                            primaryButton: .destructive(Text("删除"), action: deletePost),
+                            secondaryButton: .cancel(Text("取消"))
+                        )
+                    }
+                }
                 Text("评论")
                     .font(.headline)
                 
@@ -108,24 +125,6 @@ struct PostDetailView: View {
                         }
                     }
                     .padding(.bottom, 5)
-                }
-
-                // 删除按钮，只有帖子作者可以看到并操作
-                if post.author == userAuth.username {
-                    Button(action: {
-                        showingDeleteAlert = true
-                    }) {
-                        Text("删除帖子")
-                            .foregroundColor(.red)
-                    }
-                    .alert(isPresented: $showingDeleteAlert) {
-                        Alert(
-                            title: Text("确认删除"),
-                            message: Text("您确定要删除此帖子吗？"),
-                            primaryButton: .destructive(Text("删除"), action: deletePost),
-                            secondaryButton: .cancel(Text("取消"))
-                        )
-                    }
                 }
             }
             .padding()
