@@ -15,7 +15,6 @@ struct PostDetailView: View {
     @State private var newComment: String = ""
     @State private var comments: [Comment] = [] // 添加一个State属性来存储评论
     
-    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -72,7 +71,7 @@ struct PostDetailView: View {
                 HStack {
                     TextField("写下你的评论...", text: $newComment)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-
+                    
                     if !newComment.isEmpty {  // 当newComment不为空时，显示发送按钮
                         Button(action: addComment) {
                             Text("发送")
@@ -84,19 +83,33 @@ struct PostDetailView: View {
                         }
                     }
                 }
-
+                
                 // 评论列表
                 ForEach(comments) { comment in
-                    VStack(alignment: .leading) {
-                        Text(comment.content)
-                            .font(.body)
-                        Text("— \(comment.author), \(formatDate(comment.date))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(comment.content)
+                                .font(.body)
+                            Text("— \(comment.author), \(formatDate(comment.date))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer() // 占据剩余的水平空间
+                        
+                        if comment.author == userAuth.username {
+                            Button(action: {
+                                // 删除评论
+                                deleteCommentAlert(comment)
+                            }) {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                            .padding(.leading, 8)
+                        }
                     }
                     .padding(.bottom, 5)
                 }
-                
+
                 // 删除按钮，只有帖子作者可以看到并操作
                 if post.author == userAuth.username {
                     Button(action: {
@@ -122,25 +135,61 @@ struct PostDetailView: View {
             loadPostDetails()
         }
     }
+    
+    // 删除评论函数
+    func deleteComment(_ comment: Comment) {
+        // 检查评论作者是否与当前登录用户的用户名匹配
+        guard comment.author == userAuth.username else {
+            // 如果不匹配，不执行删除操作
+            return
+        }
+        
+        // 执行删除操作
+        guard let url = URL(string: "http://localhost:3000/api/posts/\(post.id)/comments/\(comment.id)") else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Error deleting comment: \(error)")
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200 {
+                    // 成功删除评论后更新UI
+                    DispatchQueue.main.async {
+                        if let index = comments.firstIndex(where: { $0.id == comment.id }) {
+                            comments.remove(at: index)
+                        }
+                    }
+                } else {
+                    // 处理删除失败的情况
+                }
+            }
+        }.resume()
+    }
+    
     func loadPostDetails() {
         guard let url = URL(string: "http://localhost:3000/api/posts/\(post.id)/details") else { return }
-
+        
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
                 print("Error loading post details: \(error)")
                 return
             }
-
+            
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 print("Unexpected response status code: \(String(describing: response))")
                 return
             }
-
+            
             guard let data = data else {
                 print("No data received")
                 return
             }
-
+            
             do {
                 let decodedPost = try JSONDecoder().decode(Post.self, from: data)
                 DispatchQueue.main.async {
@@ -151,6 +200,22 @@ struct PostDetailView: View {
             }
         }.resume()
     }
+    
+    // 删除评论的提示框
+    func deleteCommentAlert(_ comment: Comment) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first else {
+            return
+        }
+        
+        let alert = UIAlertController(title: "确认删除", message: "您确定要删除此评论吗？", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel, handler: nil))
+        alert.addAction(UIAlertAction(title: "删除", style: .destructive, handler: { _ in
+            deleteComment(comment)
+        }))
+        window.rootViewController?.present(alert, animated: true, completion: nil)
+    }
+
     func addComment() {
         guard let url = URL(string: "http://localhost:3000/api/posts/\(post.id)/comments") else { return }
         
@@ -190,12 +255,11 @@ struct PostDetailView: View {
             
         }.resume()
     }
-        
+    
     struct CommentData: Encodable {
         let content: String
         let author: String
     }
-    
     
     // 删除帖子的函数
     func deletePost() {
