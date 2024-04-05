@@ -17,20 +17,20 @@ struct MainView: View {
                     Label("主页", systemImage: "house.fill")
                 }
             
-            ShoppingPageView()
-                .tabItem {
-                    Label("商城", systemImage: "cart.fill")
-                }
+//            ShoppingPageView()
+//                .tabItem {
+//                    Label("商城", systemImage: "cart.fill")
+//                }
             
             PublishPageView()
                 .tabItem {
                     Label("发布", systemImage: "plus.square.fill")
                 }
 
-            MessagesPageView()
-                .tabItem {
-                    Label("消息", systemImage: "message.fill")
-                }
+//            MessagesPageView()
+//                .tabItem {
+//                    Label("消息", systemImage: "message.fill")
+//                }
 
             ProfilePageView()
                 .tabItem {
